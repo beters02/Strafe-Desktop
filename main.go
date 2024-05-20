@@ -35,17 +35,18 @@ func getFilesAt(net strafe.Net, path string) []fs.FileInfo {
 	return fi
 }
 
-func homePage(window fyne.Window, uploadPage *fyne.Container) *fyne.Container {
+func homePage(pressed func(page string)) *fyne.Container {
 	strafeHeader := createHeader("Strafe")
 	info := createTextLine("GUI Wrapper for CS Labs' file manager.")
 	text := container.NewGridWithRows(2, strafeHeader, info)
 	txtc := container.NewCenter(text)
 
 	uploadbutton := widget.NewButton("Upload", func() {
-		window.SetContent(uploadPage)
-		window.CenterOnScreen()
+		pressed("upload")
 	})
-	downloadbutton := widget.NewButton("Download", func() {})
+	downloadbutton := widget.NewButton("Download", func() {
+		pressed("download")
+	})
 	buttons := container.NewHBox(uploadbutton, downloadbutton)
 	bc := container.NewCenter(buttons)
 
@@ -53,34 +54,77 @@ func homePage(window fyne.Window, uploadPage *fyne.Container) *fyne.Container {
 	return container.NewCenter(all)
 }
 
-// upload/download page
-func filePage(net strafe.Net) *fyne.Container {
-	label := createHeader("Upload Assets")
-	files := getFilesAt(net, "/")
-	fileGrid := container.NewAdaptiveGrid(len(files))
-
-	for _, file := range files {
-		fileGrid.Add(widget.NewButton(file.Name(), func() {}))
-	}
-
-	fc := container.NewVBox(fileGrid, widget.NewLabel(""))
-	return container.NewBorder(nil, fc, nil, nil, label) //fc //container.NewWithoutLayout(lc, fc)
-}
-
 func main() {
+
+	// initialize app
 	a := app.New()
 	w := a.NewWindow("Strafe")
 	w.CenterOnScreen()
 	w.Resize(fyne.NewSize(400, 300)) //w.Resize(fyne.NewSize(1024, 768))
 
+	// connect to the asset library
 	net := strafe.NetConnect()
 
-	// temp create file page first
-	uc := filePage(net)
-	hc := homePage(w, uc)
+	// init page headers
+	uhead := createHeader("Upload Assets")
+	dhead := createHeader("Download Assets")
+
+	// init page switching functionality
+	currentPage := "none"
+
+	// create container with buttons for all weapons, since thats all we are storing right now
+	files := getFilesAt(net, "/")
+	fileGrid := container.NewAdaptiveGrid(len(files))
+
+	// finish pages
+
+	// nice! i forgot the upload page needs to display a dialog box or something.
+	// the file dialog for fyne is actually pretty bad... gotta make a custom file explorer for this.
+	// ugh.
+	ufc := container.NewBorder(nil, container.NewVBox(fileGrid, widget.NewLabel("")), nil, nil, uhead)
+
+	// this guy is fine though
+	dfc := container.NewBorder(nil, container.NewVBox(fileGrid, widget.NewLabel("")), nil, nil, dhead)
+
+	setPage := func(page string) {
+		if page == "upload" {
+			w.Resize(fyne.NewSize(1024, 768))
+			currentPage = "upload"
+			w.SetContent(ufc)
+			w.CenterOnScreen()
+		} else {
+			w.Resize(fyne.NewSize(1024, 768))
+			currentPage = "download"
+			w.SetContent(dfc)
+			w.CenterOnScreen()
+		}
+	}
+
+	// create home page
+	hc := homePage(setPage)
+
+	// add all weapon buttons
+	for _, file := range files {
+		fileGrid.Add(widget.NewButton(file.Name(), func() {
+			if currentPage == "none" {
+				return
+			} else if currentPage == "upload" {
+				println("Print all weapons from local")
+			} else {
+				println("Print all weapons from ssh")
+			}
+		}))
+	}
+
+	fileGrid.Add(widget.NewButton("Back", func() {
+		w.SetContent(hc)
+		w.Resize(fyne.NewSize(400, 300))
+		w.CenterOnScreen()
+	}))
 
 	net.Disconnect()
 
+	// lets go baby
 	w.SetContent(hc)
 	w.ShowAndRun()
 }

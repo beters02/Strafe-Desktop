@@ -54,6 +54,8 @@ func main() {
 	// nice! i forgot the upload page needs to display a dialog box or something.
 	// the file dialog for fyne is actually pretty bad... gotta make a custom file explorer for this.
 	// ugh.
+	// ******** DO NOT MAKE YOUR OWN FILE TREE GUI **************
+	// https://github.com/fyne-io/fyne-x CONTAINS A FILE TREE WIDGET!!!!!!!!!!!!!!!!!!!!!!!!!!
 	uploadPage := container.NewBorder(nil, container.NewVBox(fileGrid, widget.NewLabel("")), nil, nil, uhead)
 
 	// this guy is fine though

@@ -15,7 +15,7 @@ type Explorer struct {
 
 func CreateExplorer() Explorer {
 	explorer := Explorer{
-		CurrentDirectory: "C:/Users/{getWindowsUserNameHere}/Desktop",
+		CurrentDirectory: "C:/Users/{getWindowsUserNameHere}/Desktop/",
 		Cache:            map[string][]os.DirEntry{},
 	}
 	return explorer
@@ -38,7 +38,7 @@ func (explorer *Explorer) Next(dir string) ([]os.DirEntry, error) {
 
 	farr, err := explorer.ReadDir(newDir)
 	if err != nil {
-		return nil, errors.New("could not read previous directory")
+		return nil, errors.New("can not read requesting directory")
 	}
 
 	explorer.CurrentDirectory = newDir

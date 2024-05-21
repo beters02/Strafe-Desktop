@@ -1,5 +1,7 @@
 // Blueprint of potential explorer class responsible for retrieving files from the users file system to upload to the server
 
+// made this for nothing ahahahahahahahaha
+
 package main
 
 import (

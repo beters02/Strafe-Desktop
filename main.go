@@ -30,9 +30,9 @@ func main() {
 
 	// create pages
 	InitPages(&mainapp)
+	SetPage("Home", mainapp.window)
 
 	// lets go baby
-	SetPage("Home", mainapp.window)
 	mainapp.window.ShowAndRun()
 
 	// cant forget this bad boy

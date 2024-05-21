@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"io/fs"
 	"os"
@@ -54,6 +55,7 @@ func (page *Page) Close() {
 var Pages map[string]*Page // init main pages map
 var CurrentPage string
 var WeaponGrids map[string]*fyne.Container
+var TreeArr []*widget.Button
 
 // The correct way to create a page.
 func NewPageClass(pagename string, mainapp *Application, maincontainer *fyne.Container) *Page {
@@ -73,6 +75,7 @@ func InitPages(ma *Application) {
 	Pages = map[string]*Page{}
 	CurrentPage = "Home"
 	WeaponGrids = map[string]*fyne.Container{}
+	TreeArr = []*widget.Button{}
 
 	createHomePage(ma)
 	createDownloadPage(ma)
@@ -98,14 +101,14 @@ func SetPage(pageName string, w fyne.Window) {
 //Selector
 
 type FileSelector struct {
-	currFiles  map[string]bool
+	currFiles  map[string]string
 	currFilesN int
 	maxFiles   int
 }
 
 func NewFileSelector() *FileSelector {
 	return &FileSelector{
-		currFiles:  map[string]bool{},
+		currFiles:  map[string]string{},
 		currFilesN: 0,
 		maxFiles:   10,
 	}
@@ -124,11 +127,20 @@ func (s *FileSelector) GetFiles() interface{} {
 	return s.currFiles
 }
 
+// Change to FileData, for now you can edit the value in the dict
+func (s *FileSelector) SetFileString(file string, str string) {
+	s.currFiles[file] = str
+}
+
+func (s *FileSelector) GetFileString(file string) string {
+	return s.currFiles[file]
+}
+
 func (s *FileSelector) Select(dir string) (didSelect bool) {
 	if s.GetFilesAmount() >= s.maxFiles || s.GetFile(dir) {
 		return false
 	}
-	s.currFiles[dir] = true
+	s.currFiles[dir] = ""
 	s.currFilesN++
 	return true
 }
@@ -151,8 +163,8 @@ func createHomePage(ma *Application) *Page {
 	page := NewPageClass("Home", ma, mc)
 
 	// label
-	strafeHeader := createHeader("Strafe")
-	info := createTextLine("GUI Wrapper for CS Labs' file manager.")
+	strafeHeader := newHeader("Strafe")
+	info := newTextLine("GUI Wrapper for CS Labs' file manager.")
 	txtc := container.NewCenter(container.NewGridWithRows(2, strafeHeader, info))
 
 	// buttons
@@ -185,28 +197,32 @@ func addWeaponGridFiles(mainapp *Application, fileName string, wfiles []fs.FileI
 }
 
 func createDownloadPage(mainapp *Application) *Page {
-	dhead := createHeader("Download Assets")
+	dhead := newHeader("Download Assets")
 
 	// create container with buttons for all weapons, since thats all we are storing right now
 	files := getServerFilesAt(mainapp.net, "/")
 	fileGrid := container.NewAdaptiveGrid(len(files))
-	mc := container.NewBorder(nil, container.NewVBox(fileGrid, widget.NewLabel("")), nil, nil, dhead)
+	borderc := container.NewBorder(nil, container.NewVBox(fileGrid, widget.NewLabel(""), widget.NewLabel("")), nil, nil, dhead)
 
 	// add all weapon buttons
 	for _, file := range files {
 		fileName := file.Name()
 		wfiles := getServerFilesAt(mainapp.net, "/"+fileName)
+
 		WeaponGrids[fileName] = container.NewAdaptiveGrid(len(wfiles))
 		addWeaponGridFiles(mainapp, fileName, wfiles)
+
 		fileGrid.Add(widget.NewButton(fileName, func() {
 			mainapp.window.SetContent(WeaponGrids[fileName])
 		}))
 	}
 
 	// cant forget this bad boy
-	fileGrid.Add(widget.NewButton("Back", func() {
-		SetPage("Home", mainapp.window)
-	}))
+	but := widget.NewButton("Back", func() { SetPage("Home", mainapp.window) })
+	butc := container.NewWithoutLayout(but)
+	but.Resize(fyne.NewSize(100, 40))
+	but.Move(fyne.NewPos((1024/2)-20, 768-40-20))
+	mc := container.NewStack(butc, borderc)
 
 	// we wont add any of the objects to the struct since we dont need them
 	page := NewPageClass("Download", mainapp, mc)
@@ -221,24 +237,31 @@ func fixUid(uid string) string {
 }
 
 func deselectButton(uid string, s *FileSelector, tree *fyne.Container) {
-	s.Deselect(uid)
-	didWork := false
+	didDeselect := s.Deselect(uid)
+	if !didDeselect {
+		fmt.Println("Could not deselect item " + uid)
+		return
+	}
 
-	var nobj []fyne.CanvasObject
-	for i, v := range tree.Objects {
-		if v.(*widget.Button).Text == uid {
-			didWork = true
-			nobj = append(tree.Objects[:i], tree.Objects[i+1:]...)
+	for i := range tree.Objects {
+		if TreeArr[i].Text == uid {
+			tree.Objects = append(tree.Objects[:i], tree.Objects[i+1:]...)
+			TreeArr = append(TreeArr[:i], TreeArr[i+1:]...)
 			break
 		}
 	}
-
-	if didWork {
-		tree.Objects = nobj
-	}
 }
 
-func selectButton(uid string, s *FileSelector, tree *fyne.Container) {
+func getPossibleOptions(mainapp *Application) []string {
+	optionsFiles := getServerFilesAt(mainapp.net, "/")
+	options := []string{}
+	for _, opt := range optionsFiles {
+		options = append(options, opt.Name())
+	}
+	return options
+}
+
+func selectButton(uid string, mainapp *Application, s *FileSelector, tree *fyne.Container) {
 	didSelect := s.Select(uid)
 	if !didSelect {
 		return
@@ -251,24 +274,37 @@ func selectButton(uid string, s *FileSelector, tree *fyne.Container) {
 		return
 	}
 
-	tree.Objects = append(tree.Objects, widget.NewButton(uid, func() { deselectButton(uid, s, tree) }))
+	o := getPossibleOptions(mainapp)
+	gc := newDropdownSelection("", o, func(str string) { s.SetFileString(uid, str) })
+	b := widget.NewButton(uid, func() { deselectButton(uid, s, tree) })
+	mc := container.NewHBox(gc, b)
+
+	tree.Objects = append(tree.Objects, mc)
+	TreeArr = append(TreeArr, b)
 }
 
 func uploadFiles(mainapp *Application, s *FileSelector, tree *fyne.Container) {
-	println("Attempting file upload...")
+
+	// lets find out where these files are going
+	f := s.GetFiles().(map[string]string)
 
 	ignored := []string{}
-	f := s.GetFiles()
+	println("Attempting file upload... ")
+	for dir, loc := range f {
+		if loc == "" {
+			loc = "Misc"
+		}
 
-	for dir := range f.(map[string]bool) {
 		fn := getFileName(dir)
 		nd := "misc/uploads/" + fn
 
-		success := localFileCopy(fixUid(dir), nd)
+		dd := fixUid(dir)
+		fmt.Println(dd)
+		success := localFileCopy(dd, nd)
 		if !success {
 			ignored = append(ignored, dir)
 		} else {
-			mainapp.net.Upload(fn, "AK103")
+			mainapp.net.Upload(fn, loc)
 			deselectButton(dir, s, tree)
 			os.Remove(nd)
 		}
@@ -288,7 +324,6 @@ func uploadFiles(mainapp *Application, s *FileSelector, tree *fyne.Container) {
 }
 
 func createUploadPage(mainapp *Application) *Page {
-
 	s := NewFileSelector()
 	selectFromTree := xwidget.NewFileTree(storage.NewFileURI(getLocalHomeDir()))
 	selectedTree := container.NewGridWithRows(10)
@@ -298,7 +333,7 @@ func createUploadPage(mainapp *Application) *Page {
 		if exists {
 			deselectButton(uid, s, selectedTree)
 		} else {
-			selectButton(uid, s, selectedTree)
+			selectButton(uid, mainapp, s, selectedTree)
 		}
 	}
 

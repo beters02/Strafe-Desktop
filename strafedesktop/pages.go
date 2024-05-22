@@ -181,15 +181,22 @@ func createHomePage(ma *Application) *Page {
 
 //
 
-func addWeaponGridFiles(mainapp *Application, fileName string, wfiles []fs.FileInfo) {
+func createWeaponGrid(mainapp *Application, fileName string, wfiles []fs.FileInfo) { // fileName is weaponName
+	_, ok := WeaponGrids[fileName]
+	if !ok {
+		WeaponGrids[fileName] = container.NewVBox() //(len(wfiles))
+	}
 	WeaponGrids[fileName].Objects = []fyne.CanvasObject{}
 	WeaponGrids[fileName].Add(widget.NewButton("Refresh", func() {
-		wfiles = getServerFilesAt(mainapp.net, "/"+fileName)
-		addWeaponGridFiles(mainapp, fileName, wfiles)
+		createWeaponGrid(mainapp, fileName, getServerFilesAt(mainapp.net, "/"+fileName))
 	}))
-	for _, wf := range wfiles {
+	for _, wf := range wfiles { // wf is fileName
 		wfName := wf.Name()
-		WeaponGrids[fileName].Add(widget.NewButton(wfName, func() {}))
+		WeaponGrids[fileName].Add(widget.NewButton(wfName, func() {
+			mainapp.net.Download(wfName, fileName)
+			d := dialog.NewCustom("Success", "Dismiss", widget.NewLabel("File downloaded!"), mainapp.window)
+			d.Show()
+		}))
 	}
 	WeaponGrids[fileName].Add(widget.NewButton("Back", func() {
 		SetPage("Download", mainapp.window)
@@ -208,10 +215,7 @@ func createDownloadPage(mainapp *Application) *Page {
 	for _, file := range files {
 		fileName := file.Name()
 		wfiles := getServerFilesAt(mainapp.net, "/"+fileName)
-
-		WeaponGrids[fileName] = container.NewAdaptiveGrid(len(wfiles))
-		addWeaponGridFiles(mainapp, fileName, wfiles)
-
+		createWeaponGrid(mainapp, fileName, wfiles)
 		fileGrid.Add(widget.NewButton(fileName, func() {
 			mainapp.window.SetContent(WeaponGrids[fileName])
 		}))
@@ -271,6 +275,7 @@ func selectButton(uid string, mainapp *Application, s *FileSelector, tree *fyne.
 	isDir := isLocalFileDir(path)
 
 	if isDir {
+		s.Deselect(uid)
 		return
 	}
 
@@ -303,6 +308,7 @@ func uploadFiles(mainapp *Application, s *FileSelector, tree *fyne.Container) {
 		success := localFileCopy(dd, nd)
 		if !success {
 			ignored = append(ignored, dir)
+			deselectButton(dir, s, tree)
 		} else {
 			mainapp.net.Upload(fn, loc)
 			deselectButton(dir, s, tree)

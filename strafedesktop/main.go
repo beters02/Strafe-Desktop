@@ -1,6 +1,11 @@
+// TODO:
+// Change downloads page to file xplorerr page
+
 package main
 
 import (
+	"fmt"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	strafe "github.com/beters02/Strafe"
@@ -16,6 +21,9 @@ type Application struct {
 }
 
 func main() {
+
+	fmt.Println(GetLocalVersion())
+	GetMostRecentVersion()
 
 	// initialize app
 	a := app.New()

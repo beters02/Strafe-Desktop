@@ -122,5 +122,8 @@ func DownloadRecentBuild(rv string) {
 		return
 	}
 
+	bytec, _ := json.Marshal(map[string]interface{}{"Version": rv})
+	os.Remove("version.json")
+	os.WriteFile("version.json", bytec, 0777)
 	fmt.Printf("Recent build downloaded! Please close this exe and open the new one.")
 }

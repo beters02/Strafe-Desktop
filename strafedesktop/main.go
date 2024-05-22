@@ -22,7 +22,7 @@ type Application struct {
 
 func main() {
 	lv, _ := GetLocalVersion()
-	rv := GetMostRecentVersion()
+	rv, _ := GetMostRecentVersion()
 	fmt.Println(lv)
 	fmt.Println(rv)
 	if lv != rv {

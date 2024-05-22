@@ -126,4 +126,5 @@ func DownloadRecentBuild(rv string) {
 	os.Remove("version.json")
 	os.WriteFile("version.json", bytec, 0777)
 	fmt.Printf("Recent build downloaded! Please close this exe and open the new one.")
+	fmt.Printf("strafedesktop/builds/Strafe-Desktop-" + rv + ".exe")
 }

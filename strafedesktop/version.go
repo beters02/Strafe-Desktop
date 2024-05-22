@@ -19,14 +19,13 @@ func downloadVersionJson() ([]byte, error) {
 
 	defer out.Close()
 
-	resp, err := http.Get("https://raw.githubusercontent.com/beters02/Strafe-Desktop/main/version.json")
+	resp, err := http.Get("https://raw.githubusercontent.com/beters02/Strafe-Desktop/main/strafedesktop/version.json")
 
 	if err != nil {
 		return ret, err
 	}
 
 	defer resp.Body.Close()
-	fmt.Println(resp.Body)
 
 	_, err = io.Copy(out, resp.Body)
 
@@ -34,15 +33,45 @@ func downloadVersionJson() ([]byte, error) {
 		return ret, err
 	}
 
-	fmt.Println("Copied!")
-	return ret, nil
+	jsonFile, err := os.Open("temp_version.json")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer jsonFile.Close()
+
+	byteValue, err := io.ReadAll(jsonFile)
+	if err != nil {
+		fmt.Println(err)
+		return ret, err
+	}
+
+	return byteValue, nil
 }
 
-func GetMostRecentVersion() {
-	downloadVersionJson()
+func deleteVersionJson() {
+	_, err := os.Stat("temp_version.json")
+	if err != nil {
+		return
+	}
+	os.Remove("temp_version.json")
 }
 
-func GetLocalVersion() (map[string]interface{}, error) {
+func GetMostRecentVersion() string {
+	table := map[string]interface{}{}
+	bytec, _ := downloadVersionJson()
+	deleteVersionJson()
+
+	err := json.Unmarshal(bytec, &table)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+
+	a := table["Version"].(string)
+	return a
+}
+
+func GetLocalVersion() (string, error) {
 	table := map[string]interface{}{}
 
 	jsonFile, err := os.Open("version.json")
@@ -54,16 +83,44 @@ func GetLocalVersion() (map[string]interface{}, error) {
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
 		fmt.Println(err)
-		return table, err
+		return "", err
 	}
 
 	err = json.Unmarshal(byteValue, &table)
 	if err != nil {
 		fmt.Println(err)
-		return table, err
+		return "", err
 	}
 
-	fmt.Println("Getting version")
-	fmt.Println(table["Version"])
-	return table, err
+	a := table["Version"].(string)
+	return a, nil
+}
+
+func DownloadRecentBuild(rv string) {
+	out, err := os.Create("builds/Strafe-Desktop-" + rv + ".exe")
+
+	if err != nil {
+		fmt.Printf("Could not get recent build. %v\n", err)
+		return
+	}
+
+	defer out.Close()
+
+	resp, err := http.Get("https://raw.githubusercontent.com/beters02/Strafe-Desktop/main/strafedesktop/builds/Strafe-Desktop.exe")
+
+	if err != nil {
+		fmt.Printf("Could not get recent build. %v\n", err)
+		return
+	}
+
+	defer resp.Body.Close()
+
+	_, err = io.Copy(out, resp.Body)
+
+	if err != nil {
+		fmt.Printf("Could not get recent build. %v\n", err)
+		return
+	}
+
+	fmt.Printf("Recent build downloaded! Please close this exe and open the new one.")
 }

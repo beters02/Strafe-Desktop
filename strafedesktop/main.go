@@ -21,9 +21,14 @@ type Application struct {
 }
 
 func main() {
-
-	fmt.Println(GetLocalVersion())
-	GetMostRecentVersion()
+	lv, _ := GetLocalVersion()
+	rv := GetMostRecentVersion()
+	fmt.Println(lv)
+	fmt.Println(rv)
+	if lv != rv {
+		DownloadRecentBuild(rv)
+		return
+	}
 
 	// initialize app
 	a := app.New()

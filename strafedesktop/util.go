@@ -38,6 +38,11 @@ func getServerFilesAt(net strafe.Net, path string) []fs.FileInfo {
 	return fi
 }
 
+func isLocalFileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
 func isLocalFileDir(path string) bool {
 	isDir := false
 
@@ -67,7 +72,7 @@ func localCloseFile(f *os.File) {
 	}
 }
 
-func localFileCopy(fromPath string, toPath string) bool {
+func localFileCopy(fromPath string, toPath string, doMove bool) bool {
 	success := false
 	errcolor := color.New(color.FgRed)
 
@@ -76,7 +81,6 @@ func localFileCopy(fromPath string, toPath string) bool {
 		errcolor.Printf("\nCould not open path : %v ... Does the file exist?", fromPath)
 		return success
 	}
-	defer localCloseFile(f)
 
 	n, err := os.Create(toPath)
 	if err != nil {
@@ -114,10 +118,43 @@ func localFileCopy(fromPath string, toPath string) bool {
 		}
 	}
 
+	localCloseFile(f)
+	if doMove {
+		os.RemoveAll(fromPath)
+	}
+
 	return success && lsuc
 }
 
 func getFileName(dir string) string {
 	slashInd := strings.LastIndex(dir, "/")
 	return substr(dir, slashInd+1, len(dir))
+}
+
+func secToLastIndex(s string, subs string) int {
+	li := strings.LastIndex(s, subs)
+	if li == -1 {
+		return -1
+	}
+
+	s1 := substr(s, 0, li)
+	sli := strings.LastIndex(s1, subs)
+
+	if sli == -1 {
+		return li
+	}
+
+	return sli
+}
+
+func fixUid(uid string) string {
+	return substr(uid, 7, len(uid))
+}
+
+func getFileType(name string) string {
+	di := strings.LastIndex(name, ".")
+	if di == -1 {
+		return "folder"
+	}
+	return substr(name, 0, di)
 }

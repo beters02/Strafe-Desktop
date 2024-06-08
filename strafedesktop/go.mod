@@ -1,6 +1,6 @@
 module github.com/beters02/Strafe-Desktop
 
-go 1.21.5
+go 1.22.3
 
 require (
 	fyne.io/fyne/v2 v2.4.5

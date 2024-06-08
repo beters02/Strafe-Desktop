@@ -21,13 +21,18 @@ type Application struct {
 }
 
 func main() {
+	fmt.Println("Starting")
+
 	lv, _ := GetLocalVersion()
 	rv, _ := GetMostRecentVersion()
-	fmt.Println(lv)
-	fmt.Println(rv)
+	fmt.Println("Most Recent Version" + rv)
+	fmt.Println("Installed Version: " + lv)
+
 	if lv != rv {
-		DownloadRecentBuild(rv)
-		return
+		didUpdate := UpdatePrompt(rv)
+		if didUpdate {
+			return
+		}
 	}
 
 	// initialize app

@@ -75,8 +75,21 @@ func GetLocalVersion() (string, error) {
 	return a, nil
 }
 
+func UpdatePrompt(recentVersion string) (didUpdate bool) {
+	var s string
+	fmt.Println("New version found! Would you like to update? y N")
+	fmt.Scan(&s)
+	if s == "y" || s == "Y" {
+		DownloadRecentBuild(recentVersion)
+		return true
+	}
+
+	fmt.Println("Not updating")
+	return false
+}
+
 func DownloadRecentBuild(rv string) {
-	_, err := downloadLinkAsFile("builds/Strafe-Desktop-"+rv+".exe", "https://raw.githubusercontent.com/beters02/Strafe-Desktop/main/strafedesktop/builds/Strafe-Desktop.exe")
+	_, err := downloadLinkAsFile("./Strafe-Desktop-"+rv+".exe", "https://raw.githubusercontent.com/beters02/Strafe-Desktop/main/strafedesktop/builds/Strafe-Desktop.exe")
 
 	if err != nil {
 		fmt.Printf("Could not get recent build. %v\n", err)
@@ -88,5 +101,5 @@ func DownloadRecentBuild(rv string) {
 	os.WriteFile("version.json", bytec, 0777)
 
 	fmt.Printf("Recent build downloaded! Please close this exe and open the new one.")
-	fmt.Printf("strafedesktop/builds/Strafe-Desktop-" + rv + ".exe")
+	fmt.Printf("strafedesktop/Strafe-Desktop-" + rv + ".exe")
 }

@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 )
 
 func downloadLinkAsFile(where string, link string) (bool, error) {
@@ -75,6 +77,12 @@ func GetLocalVersion() (string, error) {
 	return a, nil
 }
 
+func CheckForNewerVersion(installedVersion string, latestVersion string) (isNewer bool) {
+	installedTotal := getVersionTotal(installedVersion)
+	latestTotal := getVersionTotal(latestVersion)
+	return latestTotal > installedTotal
+}
+
 func UpdatePrompt(recentVersion string) (didUpdate bool) {
 	var s string
 	fmt.Println("New version found! Would you like to update? y N")
@@ -102,4 +110,14 @@ func DownloadRecentBuild(rv string) {
 
 	fmt.Printf("Recent build downloaded! Please close this exe and open the new one.")
 	fmt.Printf("strafedesktop/Strafe-Desktop-" + rv + ".exe")
+}
+
+func getVersionTotal(vstr string) int {
+	arr := strings.Split(vstr, ".")
+	num := 0
+	for _, v := range arr {
+		i, _ := strconv.Atoi(v)
+		num += i
+	}
+	return num
 }

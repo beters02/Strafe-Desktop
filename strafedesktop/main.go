@@ -28,7 +28,14 @@ func main() {
 	fmt.Println("Most Recent Version" + rv)
 	fmt.Println("Installed Version: " + lv)
 
-	if lv != rv {
+	/*if lv != rv {
+		didUpdate := UpdatePrompt(rv)
+		if didUpdate {
+			return
+		}
+	}*/
+
+	if CheckForNewerVersion(lv, rv) {
 		didUpdate := UpdatePrompt(rv)
 		if didUpdate {
 			return

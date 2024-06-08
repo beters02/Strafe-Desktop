@@ -23,20 +23,10 @@ type Application struct {
 func main() {
 	fmt.Println("Starting")
 
-	lv, _ := GetLocalVersion()
-	rv, _ := GetMostRecentVersion()
-	fmt.Println("Most Recent Version" + rv)
-	fmt.Println("Installed Version: " + lv)
-
-	/*if lv != rv {
-		didUpdate := UpdatePrompt(rv)
-		if didUpdate {
-			return
-		}
-	}*/
-
-	if CheckForNewerVersion(lv, rv) {
-		didUpdate := UpdatePrompt(rv)
+	// Check for new version
+	foundNew, _, latestVersion := CheckForNewerVersion()
+	if foundNew {
+		didUpdate := UpdatePrompt(latestVersion)
 		if didUpdate {
 			return
 		}

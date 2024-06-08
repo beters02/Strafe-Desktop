@@ -77,10 +77,14 @@ func GetLocalVersion() (string, error) {
 	return a, nil
 }
 
-func CheckForNewerVersion(installedVersion string, latestVersion string) (isNewer bool) {
-	installedTotal := getVersionTotal(installedVersion)
-	latestTotal := getVersionTotal(latestVersion)
-	return latestTotal > installedTotal
+func CheckForNewerVersion() (isNewer bool, installedVersion string, latestVersion string) {
+	lv, _ := GetLocalVersion()
+	rv, _ := GetMostRecentVersion()
+	fmt.Println("Most Recent Version" + rv)
+	fmt.Println("Installed Version: " + lv)
+	installedTotal := getVersionTotal(lv)
+	latestTotal := getVersionTotal(rv)
+	return latestTotal > installedTotal, lv, rv
 }
 
 func UpdatePrompt(recentVersion string) (didUpdate bool) {

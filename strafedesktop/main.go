@@ -28,6 +28,7 @@ func main() {
 	if foundNew {
 		didUpdate := UpdatePrompt(latestVersion)
 		if didUpdate {
+			UpdatedScreen(latestVersion)
 			return
 		}
 	}

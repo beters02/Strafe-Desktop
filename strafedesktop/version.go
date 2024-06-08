@@ -8,6 +8,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
 )
 
 func downloadLinkAsFile(where string, link string) (bool, error) {
@@ -80,7 +84,7 @@ func GetLocalVersion() (string, error) {
 func CheckForNewerVersion() (isNewer bool, installedVersion string, latestVersion string) {
 	lv, _ := GetLocalVersion()
 	rv, _ := GetMostRecentVersion()
-	fmt.Println("Most Recent Version" + rv)
+	fmt.Println("Most Recent Version: " + rv)
 	fmt.Println("Installed Version: " + lv)
 	installedTotal := getVersionTotal(lv)
 	latestTotal := getVersionTotal(rv)
@@ -112,8 +116,8 @@ func DownloadRecentBuild(rv string) {
 	os.Remove("version.json")
 	os.WriteFile("version.json", bytec, 0777)
 
-	fmt.Printf("Recent build downloaded! Please close this exe and open the new one.")
-	fmt.Printf("strafedesktop/Strafe-Desktop-" + rv + ".exe")
+	fmt.Println("Recent build downloaded! Please close this exe and open the new one.")
+	fmt.Println("strafedesktop/Strafe-Desktop-" + rv + ".exe")
 }
 
 func getVersionTotal(vstr string) int {
@@ -124,4 +128,23 @@ func getVersionTotal(vstr string) int {
 		num += i
 	}
 	return num
+}
+
+func UpdatedScreen(newVersion string) {
+	// initialize app
+	a := app.New()
+	w := a.NewWindow("Updated")
+
+	// label
+	strafeHeader := newHeader("Successfully updated Strafe.")
+	info := newTextLine("Please close this application and open the newly installed exe. You may delete the old exe.")
+	info1 := newTextLine("strafedesktop/Strafe-Desktop-" + newVersion + ".exe")
+	txtc := container.NewCenter(container.NewGridWithRows(3, strafeHeader, info, info1))
+
+	w.SetContent(txtc)
+	w.CenterOnScreen()
+	w.Resize(fyne.NewSize(800, 600))
+
+	// lets go baby
+	w.ShowAndRun()
 }
